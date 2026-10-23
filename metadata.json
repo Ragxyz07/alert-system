@@ -1,0 +1,7 @@
+{
+  "name": "SOC Alert Triage",
+  "description": "A clean, minimal alert triage console for SOC analysts powered by CIC-IDS2017 threat intelligence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

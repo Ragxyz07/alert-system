@@ -1,0 +1,163 @@
+[
+  {
+    "id": "ALT-9041",
+    "source_ip": "172.16.0.1",
+    "dest_ip": "192.168.10.50",
+    "port": 80,
+    "risk": 96,
+    "severity": "Critical",
+    "top_features": [
+      "Unusually high flow rate exceeding 85,000 packets per second",
+      "Symmetric zero-window TCP flags typical of DoS Hulk attack",
+      "Abnormal HTTP request headers with random user-agent strings"
+    ]
+  },
+  {
+    "id": "ALT-8912",
+    "source_ip": "172.16.0.1",
+    "dest_ip": "192.168.10.51",
+    "port": 443,
+    "risk": 92,
+    "severity": "Critical",
+    "top_features": [
+      "Rapid succession of SYN packets without ACK responses",
+      "Target host TCP connection queue saturation",
+      "Flow duration abnormally short under 15 milliseconds"
+    ]
+  },
+  {
+    "id": "ALT-8744",
+    "source_ip": "192.168.10.8",
+    "dest_ip": "192.168.10.25",
+    "port": 22,
+    "risk": 87,
+    "severity": "High",
+    "top_features": [
+      "Over 450 SSH authentication attempts in two minutes",
+      "Sudden spike in outbound encrypted payload volume",
+      "Source host exhibiting lateral movement port sweep"
+    ]
+  },
+  {
+    "id": "ALT-8520",
+    "source_ip": "172.16.0.1",
+    "dest_ip": "192.168.10.50",
+    "port": 8080,
+    "risk": 82,
+    "severity": "High",
+    "top_features": [
+      "Multiple SQL escape sequences detected in URI parameters",
+      "HTTP 500 error response rate exceeded 80%",
+      "Consecutive automated payload variations within milliseconds"
+    ]
+  },
+  {
+    "id": "ALT-8219",
+    "source_ip": "205.174.165.73",
+    "dest_ip": "192.168.10.15",
+    "port": 80,
+    "risk": 78,
+    "severity": "High",
+    "top_features": [
+      "Periodic beaconing pattern observed every 60 seconds",
+      "Outbound HTTP POST payloads matching Ares botnet signature",
+      "Known malicious external command-and-control IP address"
+    ]
+  },
+  {
+    "id": "ALT-7840",
+    "source_ip": "172.16.0.1",
+    "dest_ip": "192.168.10.12",
+    "port": 21,
+    "risk": 71,
+    "severity": "High",
+    "top_features": [
+      "Repeated FTP login failures using common administrative usernames",
+      "High frequency connection attempts without banner acknowledgment"
+    ]
+  },
+  {
+    "id": "ALT-7415",
+    "source_ip": "192.168.10.19",
+    "dest_ip": "192.168.10.3",
+    "port": 445,
+    "risk": 64,
+    "severity": "Medium",
+    "top_features": [
+      "Sequential TCP SYN probes across contiguous private IP addresses",
+      "Unusually short packet inter-arrival times"
+    ]
+  },
+  {
+    "id": "ALT-6982",
+    "source_ip": "172.16.0.1",
+    "dest_ip": "192.168.10.50",
+    "port": 80,
+    "risk": 58,
+    "severity": "Medium",
+    "top_features": [
+      "Directory traversal strings detected in GET request query",
+      "Server responded with 403 Forbidden status codes"
+    ]
+  },
+  {
+    "id": "ALT-6531",
+    "source_ip": "192.168.10.14",
+    "dest_ip": "192.168.10.50",
+    "port": 53,
+    "risk": 52,
+    "severity": "Medium",
+    "top_features": [
+      "Elevated rate of high-entropy DNS queries",
+      "Flow size 3x larger than typical corporate workstation baseline"
+    ]
+  },
+  {
+    "id": "ALT-5840",
+    "source_ip": "192.168.10.9",
+    "dest_ip": "192.168.10.50",
+    "port": 443,
+    "risk": 45,
+    "severity": "Medium",
+    "top_features": [
+      "TLS connection renegotiation frequency higher than normal",
+      "Client certificate verification retry anomaly"
+    ]
+  },
+  {
+    "id": "ALT-4120",
+    "source_ip": "192.168.10.2",
+    "dest_ip": "192.168.10.50",
+    "port": 123,
+    "risk": 28,
+    "severity": "Low",
+    "top_features": [
+      "NTP clock synchronization request slightly out of scheduled cycle",
+      "Minimal packet payload variance"
+    ]
+  },
+  {
+    "id": "ALT-3209",
+    "source_ip": "192.168.10.17",
+    "dest_ip": "192.168.10.50",
+    "port": 80,
+    "risk": 21,
+    "severity": "Low",
+    "top_features": [
+      "Standard web browsing session with benign asset caching headers",
+      "Packet timings consistent with regular user interaction"
+    ]
+  },
+  {
+    "id": "ALT-2104",
+    "source_ip": "192.168.10.22",
+    "dest_ip": "192.168.10.50",
+    "port": 443,
+    "risk": 14,
+    "severity": "Low",
+    "top_features": [
+      "Periodic telemetry heartbeat to recognized software update server",
+      "Flow metrics match baseline workstation profile"
+    ]
+  }
+]
