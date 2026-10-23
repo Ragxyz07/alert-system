@@ -442,6 +442,28 @@ export default function App() {
     }
   };
 
+  // Export CSV Report (instant client-side with server fallback)
+  const handleExportReport = () => {
+    const records = Object.values(triagedHistory);
+    if (records.length === 0) {
+      window.location.href = '/api/export';
+      return;
+    }
+
+    let csvContent = 'data:text/csv;charset=utf-8,Alert ID,Attack Type,Source IP,Dest IP,Port,Risk,Severity,Triage Decision,Firewall Rule,Timestamp\n';
+    records.forEach((item) => {
+      csvContent += `"${item.alert.id}","${item.alert.attack_type || ''}","${item.alert.source_ip}","${item.alert.dest_ip}",${item.alert.port},${item.alert.risk},"${item.alert.severity}","${item.status}","${item.rule || 'N/A'}","${item.timestamp}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `soc_triage_audit_log_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Reset demo
   const handleResetDemo = async () => {
     try {
@@ -643,14 +665,14 @@ export default function App() {
               )}
             </button>
 
-            <a
-              href="/api/export"
-              className="glass-button px-3 py-1.5 text-xs font-semibold rounded-xl text-slate-200 hover:text-white transition-all flex items-center gap-1.5"
-              title="Download audit CSV report"
+            <button
+              onClick={handleExportReport}
+              className="glass-button px-3 py-1.5 text-xs font-semibold rounded-xl text-slate-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Download audit CSV report of all triaged alerts"
             >
               <Download className="w-3.5 h-3.5 text-slate-400" />
               <span>Export CSV</span>
-            </a>
+            </button>
 
             <button
               onClick={() => setShowShortcutsModal(true)}
@@ -1230,13 +1252,14 @@ export default function App() {
                   />
                 </div>
 
-                <a
-                  href="/api/export"
-                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 text-slate-950 hover:brightness-110 shadow-md shadow-cyan-500/20 transition-all flex items-center gap-1.5"
+                <button
+                  onClick={handleExportReport}
+                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 text-slate-950 hover:brightness-110 shadow-md shadow-cyan-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Download audit CSV report"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
-                </a>
+                </button>
               </div>
             </div>
 
