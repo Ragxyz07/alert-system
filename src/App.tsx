@@ -120,6 +120,20 @@ export default function App() {
   const [copiedRuleId, setCopiedRuleId] = useState<string | null>(null);
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [showPresetsBar, setShowPresetsBar] = useState<boolean>(false);
+  const [showAttackCrafterModal, setShowAttackCrafterModal] = useState<boolean>(false);
+  const [attackForm, setAttackForm] = useState({
+    attack_type: 'SSH-Patator Brute Force',
+    source_ip: '192.168.1.105',
+    dest_ip: '192.168.10.25',
+    port: 22,
+    attempts: 450,
+    protocol: 'TCP',
+    target_asset: 'SSH Bastion'
+  });
+  const [isExecutingAttack, setIsExecutingAttack] = useState<boolean>(false);
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  const [copiedCurl, setCopiedCurl] = useState<boolean>(false);
+  const [crafterTab, setCrafterTab] = useState<'gui' | 'cli'>('gui');
 
   const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -443,6 +457,73 @@ export default function App() {
     }
   };
 
+  // Launch manual live attack/brute force
+  const handleLaunchCustomAttack = async () => {
+    setIsExecutingAttack(true);
+    setTerminalLogs([
+      `[ATTACK INITIALIZED] Target: ${attackForm.dest_ip}:${attackForm.port} (${attackForm.target_asset})`,
+      `[SPOOFED ORIGIN] Source IP: ${attackForm.source_ip} | Protocol: ${attackForm.protocol}`,
+      `[DICTIONARY SPRAY] Loaded 10,000 common credentials (rockyou.txt)...`,
+    ]);
+
+    setTimeout(() => {
+      setTerminalLogs((prev) => [
+        ...prev,
+        `[BURST] Spraying ${attackForm.attempts} credential combinations across ${attackForm.port}...`,
+        `[AUTH FAILED] User: 'admin' | Response: 401 Unauthorized`,
+        `[AUTH FAILED] User: 'root' | Response: 401 Unauthorized`,
+        `[AUTH FAILED] User: 'ubuntu' | Response: 401 Unauthorized`,
+      ]);
+    }, 350);
+
+    setTimeout(async () => {
+      try {
+        setTerminalLogs((prev) => [
+          ...prev,
+          `[FLOW THRESHOLD EXCEEDED] ${attackForm.attempts} handshakes rejected!`,
+          `[IDS CLASSIFIER] Feeding raw telemetry into CIC-IDS2017 detection engine...`,
+        ]);
+
+        const res = await fetch('/api/alerts/custom', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(attackForm)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.alert) {
+            setAlerts((prev) => [data.alert, ...prev]);
+            setSelectedId(data.alert.id);
+            setCurrentTab('queue');
+            setTerminalLogs((prev) => [
+              ...prev,
+              `[SUCCESS] Ingested ${data.alert.id} with Risk ${data.alert.risk}/100 (${data.alert.severity})!`,
+            ]);
+
+            setNotification({
+              message: `⚡ Live Attack Ingested: ${data.alert.attack_type} -> Risk ${data.alert.risk}/100 (${data.alert.severity})`,
+              type: 'threat'
+            });
+
+            setTimeout(() => {
+              setIsExecutingAttack(false);
+              setShowAttackCrafterModal(false);
+            }, 900);
+          }
+        }
+      } catch {
+        setIsExecutingAttack(false);
+      }
+    }, 850);
+  };
+
+  const handleGenerateRandomIP = () => {
+    const octet1 = Math.floor(Math.random() * 2) === 0 ? '192.168.1' : '10.0.4';
+    const octet2 = Math.floor(10 + Math.random() * 240);
+    setAttackForm((prev) => ({ ...prev, source_ip: `${octet1}.${octet2}` }));
+  };
+
   const handleCopyFirewallRule = (id: string, ruleText: string) => {
     navigator.clipboard.writeText(ruleText);
     setCopiedRuleId(id);
@@ -507,6 +588,19 @@ export default function App() {
 
           {/* Quick Action Toolbar */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Live Attack Crafter Trigger */}
+            <button
+              onClick={() => {
+                setShowAttackCrafterModal(true);
+                setTerminalLogs([]);
+              }}
+              className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white shadow-md shadow-rose-500/25 hover:brightness-110 transition-all flex items-center gap-1.5 border border-rose-400/40 cursor-pointer"
+              title="Launch a live manual brute force or custom network attack"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>Craft Live Attack</span>
+            </button>
+
             <button
               onClick={() => setShowPresetsBar(!showPresetsBar)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 ${
@@ -1450,6 +1544,239 @@ export default function App() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* LIVE ATTACK CRAFTER & BRUTE FORCE STUDIO MODAL */}
+      {showAttackCrafterModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-rose-500/30 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500/30 to-amber-500/30 border border-rose-500/40 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                  <Zap className="w-5 h-5 text-rose-300 fill-rose-400/40" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Live Attack &amp; Brute Force Crafter
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Manually execute a simulated attack flow into the SOC triage queue
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAttackCrafterModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Sub-tabs: GUI Crafter vs Terminal CLI copy */}
+            <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+              <button
+                onClick={() => setCrafterTab('gui')}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  crafterTab === 'gui'
+                    ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Interactive Crafter
+              </button>
+              <button
+                onClick={() => setCrafterTab('cli')}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  crafterTab === 'cli'
+                    ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Terminal / cURL Command
+              </button>
+            </div>
+
+            {crafterTab === 'gui' ? (
+              <div className="space-y-4">
+                {/* Attack Quick Presets */}
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                    Select Attack Template
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { type: 'SSH-Patator Brute Force', port: 22, asset: 'SSH Bastion', proto: 'TCP', count: 450 },
+                      { type: 'FTP-Patator Password Spray', port: 21, asset: 'SSH Bastion', proto: 'TCP', count: 320 },
+                      { type: 'Web Admin Brute Force', port: 443, asset: 'Production Web App', proto: 'TCP', count: 750 },
+                      { type: 'Postgres Auth Flooding', port: 5432, asset: 'Primary Database', proto: 'TCP', count: 900 }
+                    ].map((preset) => (
+                      <button
+                        key={preset.type}
+                        type="button"
+                        onClick={() =>
+                          setAttackForm((prev) => ({
+                            ...prev,
+                            attack_type: preset.type,
+                            port: preset.port,
+                            target_asset: preset.asset,
+                            protocol: preset.proto,
+                            attempts: preset.count
+                          }))
+                        }
+                        className={`p-2.5 rounded-xl text-left border transition-all ${
+                          attackForm.attack_type === preset.type
+                            ? 'bg-rose-500/20 border-rose-500/60 text-white shadow-xs'
+                            : 'glass-panel-subtle text-slate-300 hover:border-white/20'
+                        }`}
+                      >
+                        <span className="text-[10px] text-rose-300 font-mono block">Port {preset.port}</span>
+                        <span className="text-xs font-bold block leading-tight mt-0.5">{preset.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Form Controls: Source IP & Target Asset */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-300">Attacker Source IP</label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateRandomIP}
+                        className="text-[10px] text-cyan-300 hover:underline"
+                      >
+                        Random IP
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={attackForm.source_ip}
+                      onChange={(e) => setAttackForm({ ...attackForm, source_ip: e.target.value })}
+                      className="w-full text-xs font-mono bg-black/40 border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-hidden focus:border-rose-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1">Target Asset &amp; Destination</label>
+                    <select
+                      value={attackForm.target_asset}
+                      onChange={(e) => {
+                        const asset = e.target.value;
+                        const destMap: Record<string, string> = {
+                          'SSH Bastion': '192.168.10.25',
+                          'Production Web App': '192.168.10.50',
+                          'Primary Database': '192.168.10.15',
+                          'Domain Controller': '192.168.10.2'
+                        };
+                        setAttackForm({
+                          ...attackForm,
+                          target_asset: asset,
+                          dest_ip: destMap[asset] || '192.168.10.50'
+                        });
+                      }}
+                      className="w-full text-xs bg-black/40 border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-hidden focus:border-rose-400"
+                    >
+                      <option value="SSH Bastion">SSH Bastion (192.168.10.25)</option>
+                      <option value="Production Web App">Production Web App (192.168.10.50)</option>
+                      <option value="Primary Database">Primary Database (192.168.10.15)</option>
+                      <option value="Domain Controller">Domain Controller (192.168.10.2)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Brute Force Attempts Slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1 text-xs">
+                    <span className="font-bold text-slate-300">Burst Authentication Attempts</span>
+                    <span className="font-mono text-rose-300 font-bold">{attackForm.attempts} failed logins</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="1500"
+                    step="50"
+                    value={attackForm.attempts}
+                    onChange={(e) => setAttackForm({ ...attackForm, attempts: Number(e.target.value) })}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+                    <span>50 attempts (Medium Risk)</span>
+                    <span>500 (High Risk)</span>
+                    <span>1,500 (Critical Risk)</span>
+                  </div>
+                </div>
+
+                {/* Real-time Simulated Terminal Output */}
+                {terminalLogs.length > 0 && (
+                  <div className="bg-black/80 rounded-xl p-3 border border-rose-500/30 font-mono text-[11px] text-rose-300 space-y-1 max-h-32 overflow-y-auto">
+                    {terminalLogs.map((log, i) => (
+                      <div key={i} className="leading-snug">{log}</div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Launch Action */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleLaunchCustomAttack}
+                    disabled={isExecutingAttack}
+                    className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:brightness-110 text-white font-bold rounded-xl text-xs shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <Zap className={`w-4 h-4 fill-white ${isExecutingAttack ? 'animate-bounce' : ''}`} />
+                    <span>{isExecutingAttack ? 'Launching Live Brute Force...' : 'Launch Live Attack & Ingest Alert'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* CLI / cURL Instructions */
+              <div className="space-y-3 text-xs">
+                <p className="text-slate-300 leading-relaxed">
+                  You can also trigger a live attack externally from any terminal, script, or Postman.
+                  Run this command to ingest an attack into the dashboard in real time:
+                </p>
+
+                <div className="bg-black/90 rounded-xl p-3.5 border border-white/15 font-mono text-xs text-cyan-300 relative select-all overflow-x-auto">
+                  {`curl -X POST http://localhost:3000/api/alerts/custom \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "attack_type": "${attackForm.attack_type}",
+    "source_ip": "${attackForm.source_ip}",
+    "dest_ip": "${attackForm.dest_ip}",
+    "port": ${attackForm.port},
+    "attempts": ${attackForm.attempts},
+    "target_asset": "${attackForm.target_asset}"
+  }'`}
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `curl -X POST http://localhost:3000/api/alerts/custom -H "Content-Type: application/json" -d '{"attack_type":"${attackForm.attack_type}","source_ip":"${attackForm.source_ip}","dest_ip":"${attackForm.dest_ip}","port":${attackForm.port},"attempts":${attackForm.attempts},"target_asset":"${attackForm.target_asset}"}'`
+                      );
+                      setCopiedCurl(true);
+                      setTimeout(() => setCopiedCurl(false), 2000);
+                    }}
+                    className="px-3.5 py-2 glass-button text-xs font-bold rounded-xl text-white hover:bg-white/15 transition-all flex items-center gap-1.5"
+                  >
+                    {copiedCurl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCurl ? 'cURL Copied!' : 'Copy cURL Command'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCrafterTab('gui')}
+                    className="text-xs text-rose-300 hover:underline"
+                  >
+                    Back to Interactive Crafter &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

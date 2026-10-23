@@ -578,6 +578,72 @@ app.post('/api/alerts/simulate', (req, res) => {
   res.json({ success: true, alert: newAlert });
 });
 
+// 3b. POST /api/alerts/custom: inject user-crafted manual attack/brute-force alert
+app.post('/api/alerts/custom', (req, res) => {
+  const {
+    attack_type = 'SSH-Patator Brute Force',
+    source_ip = '192.168.1.105',
+    dest_ip = '192.168.10.25',
+    port = 22,
+    attempts = 450,
+    protocol = 'TCP',
+    target_asset = 'SSH Bastion'
+  } = req.body || {};
+
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const newId = `ALT-${randomSuffix}`;
+
+  const numAttempts = Number(attempts) || 450;
+  const numPort = Number(port) || 22;
+  const duration = Math.max(1200, Math.round(numAttempts * 120));
+  const pps = Math.round(numAttempts * 3.2);
+  const bytesPerSec = Math.round(numAttempts * 420);
+  const synRatio = Math.min(0.92, 0.45 + (numAttempts / 1000) * 0.4);
+
+  const classification = classifyFlow({
+    packets_per_sec: pps,
+    bytes_per_sec: bytesPerSec,
+    syn_ratio: synRatio,
+    port: numPort,
+    duration: duration
+  });
+
+  const calculatedRisk = Math.min(99, Math.max(classification.risk, 55 + Math.round(numAttempts / 20)));
+  const calculatedSeverity = calculatedRisk >= 90 ? 'Critical' : calculatedRisk >= 70 ? 'High' : calculatedRisk >= 40 ? 'Medium' : 'Low';
+
+  const features = [
+    { text: `Over ${numAttempts} rapid authentication handshake attempts detected in window`, impact: 58 },
+    { text: `Sudden spike in connection retry rate against Port ${numPort}`, impact: 26 },
+    { text: `Abnormal failure ratio on target asset ${target_asset}`, impact: 16 }
+  ];
+
+  const newAlert: Alert = {
+    id: newId,
+    source_ip: String(source_ip),
+    dest_ip: String(dest_ip),
+    port: numPort,
+    risk: calculatedRisk,
+    severity: calculatedSeverity as any,
+    attack_type: `${attack_type} (${numAttempts} attempts)`,
+    top_features: features,
+    raw_flow: {
+      flow_duration_ms: duration,
+      total_fwd_packets: numAttempts * 2,
+      total_bwd_packets: numAttempts * 2,
+      flow_bytes_per_sec: bytesPerSec,
+      flow_packets_per_sec: pps,
+      syn_flag_count: numAttempts,
+      protocol: String(protocol).toUpperCase(),
+      source_type: (source_ip.startsWith('192.168') || source_ip.startsWith('10.') ? 'Internal Subnet' : 'External Public') as any,
+      dest_asset: (target_asset || 'Production Web App') as any
+    }
+  };
+
+  alertsDatabase.unshift(newAlert);
+  res.json({ success: true, alert: newAlert });
+});
+
+
 app.post('/api/alerts/reset', (req, res) => {
   alertsDatabase = JSON.parse(JSON.stringify(INITIAL_ALERTS));
   res.json({ success: true, count: alertsDatabase.length });
